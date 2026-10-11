@@ -291,6 +291,7 @@ function 결과문구(gr, mt) {
   쓰기('pull-b', 작['보고δ'] ?? '—');
   쓰기('pull-a2', pct(작['찾음δ']));
   쓰기('pull-b2', pct(작['보고δ']));
+  쓰기('pull-small-name', 작['이름']);
   쓰기('pull-small', 작['유효인원'].toLocaleString());
 
   // 큰 집단은 창에 따라 이야기가 달라짐 — 14일에서는 보고가 한참 뒤에 오지만
@@ -299,11 +300,12 @@ function 결과문구(gr, mt) {
   const 꼬리 = document.getElementById('pull-tail');
   if (꼬리) {
     const 인원 = 큰['유효인원'].toLocaleString();
+    const 이름 = `<code>${큰['이름']}</code> 유효 인원 ${인원}명짜리 집단`;
     const ㄱ = 큰['찾음δ'], ㄴ = 큰['보고δ'];
     꼬리.innerHTML = (ㄱ != null && ㄴ != null && ㄴ <= ㄱ * 1.05)
-      ? `${인원}명짜리 집단은 <strong>${pct(ㄱ)}</strong>과 <strong>${pct(ㄴ)}</strong>로
+      ? `${이름}은 <strong>${pct(ㄱ)}</strong>과 <strong>${pct(ㄴ)}</strong>로
          둘이 거의 겹칩니다 — 집단이 크면 유의성은 더 이상 병목이 아닙니다.`
-      : `${인원}명짜리 집단은 <strong>${pct(ㄱ)} → ${pct(ㄴ)}</strong>.`;
+      : `${이름}은 <strong>${pct(ㄱ)} → ${pct(ㄴ)}</strong>.`;
   }
 
   쓰기('ex1-name', 작['이름']);
