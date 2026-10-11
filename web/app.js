@@ -4,6 +4,17 @@
 const DATA = 'web/data/';
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
+// 창을 바꾸면 같은 캔버스에 다시 그리게 됨. Chart.js 는 옛 차트를 치우지 않으면
+// 두 개가 겹쳐 남아 마우스를 올릴 때 엉뚱한 값이 뜨므로 여기 모아 두고 버림
+const 그린것 = {};
+function 캔버스(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  if (그린것[id]) { 그린것[id].destroy(); delete 그린것[id]; }
+  return el;
+}
+function 기억(id, 차트) { 그린것[id] = 차트; return 차트; }
+
 async function 읽기(이름) {
   try {
     const r = await fetch(DATA + 이름, { cache: 'no-store' });
@@ -25,10 +36,10 @@ function 기본옵션() {
 
 // ── 그림 A. N-Day 리텐션 ─────────────────────────────────────────────
 function 그림_nday(d) {
-  const el = document.getElementById('chart-nday');
+  const el = 캔버스('chart-nday');
   if (!d || !el) return;
   document.getElementById('nday-users').textContent = d['유저수'].toLocaleString();
-  new Chart(el, {
+  기억('chart-nday', new Chart(el, {
     type: 'line',
     data: {
       labels: d['점'].map(p => 'D' + p.day),
@@ -57,7 +68,7 @@ function 그림_nday(d) {
         x: { grid: { display: false } }
       }
     }
-  });
+  }));
 }
 
 // ── 그림 B. 기준일별 D1 ──────────────────────────────────────────────
@@ -83,12 +94,12 @@ const 띠플러그인 = {
 };
 
 function 그림_d1(d) {
-  const el = document.getElementById('chart-d1');
+  const el = 캔버스('chart-d1');
   if (!d || !el) return;
   const 점 = d['점'];
   const 학습 = 점.filter(p => p['구간'] === '학습');
   const 평가 = 점.filter(p => p['구간'] === '평가');
-  new Chart(el, {
+  기억('chart-d1', new Chart(el, {
     type: 'line',
     plugins: [띠플러그인],
     data: {
@@ -148,7 +159,7 @@ function 그림_d1(d) {
         x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }
       }
     }
-  });
+  }));
 }
 
 // ── δ 슬라이더 ───────────────────────────────────────────────────────
@@ -200,6 +211,10 @@ function 묶음갱신(상자, 목록, δ, 출력) {
 
 function 묶음붙이기(상자id, 슬라이더id, 출력id, 목록) {
   const 상자 = document.getElementById(상자id);
+  // 창을 바꿀 때마다 addEventListener 가 쌓이면 한 번 끌 때 여러 번 그려짐.
+  // 노드를 복제해 바꿔치면 옛 리스너가 통째로 떨어짐
+  const 옛슬 = document.getElementById(슬라이더id);
+  옛슬.replaceWith(옛슬.cloneNode(true));
   const 슬 = document.getElementById(슬라이더id);
   const 출력 = document.getElementById(출력id);
   if (!상자 || !슬 || !목록.length) return;
@@ -221,7 +236,7 @@ function 그림_curve(d) {
     d['띠'].map(b => `<tr><td>${b['구간']}</td><td>${b['개수']}</td>
       <td class="num">${b['중앙']}%p</td><td class="num">${b['최소']}~${b['최대']}</td></tr>`).join('');
 
-  new Chart(document.getElementById('chart-curve'), {
+  기억('chart-curve', new Chart(캔버스('chart-curve'), {
     type: 'scatter',
     data: {
       datasets: [{
@@ -247,26 +262,67 @@ function 그림_curve(d) {
         y: { type: 'logarithmic', title: { display: true, text: '보고 하한 (%p)' } }
       }
     }
-  });
+  }));
 }
 
 // ── 시작 ─────────────────────────────────────────────────────────────
-(async function () {
-  기본옵션();
-  const [nd, d1, gr, cv, mt] = await Promise.all(
-    ['nday.json', 'd1_daily.json', 'groups.json', 'curve.json', 'meta.json'].map(읽기));
+// 평가 창을 두 개(2일·14일) 만들어 두고 단추로 갈아끼움. 같은 데이터·같은 모델인데
+// **평가 기간 길이만 다름** — 그래서 하한이 얼마나 달라지는지가 그대로 보임.
+let 지금창 = null;
+
+async function 창그리기(창) {
+  if (창 === 지금창) return;
+  지금창 = 창;
+
+  for (const b of document.querySelectorAll('#window-tabs button')) {
+    const 고름 = b.dataset.창 === 창;
+    b.classList.toggle('on', 고름);
+    b.setAttribute('aria-selected', 고름 ? 'true' : 'false');
+  }
+
+  const [d1, gr, cv, mt] = await Promise.all(
+    ['d1_daily', 'groups', 'curve', 'meta'].map(n => 읽기(`${n}_${창}.json`)));
 
   if (mt) {
     document.getElementById('meta-line').textContent =
       `학습 ${mt['학습기간']} · 평가 ${mt['평가기간']} · 분석 행 ${mt['분석행'].toLocaleString()}`;
     document.getElementById('meta-bar').textContent = mt['판정선'].toFixed(2);
     document.getElementById('built').textContent = `마지막 갱신 ${mt['만든날']}`;
+    for (const el of document.querySelectorAll('[data-meta]')) {
+      const v = mt[el.dataset.meta];
+      if (v == null) continue;
+      if (typeof v !== 'number') { el.textContent = v; continue; }
+      // 큰 수는 '1,000만' 꼴로 — 머리말 숫자가 열두 자리로 늘어지면 읽히지 않음
+      el.textContent = el.dataset.fmt === '만'
+        ? Math.round(v / 10000).toLocaleString() + '만'
+        : v.toLocaleString();
+    }
   }
-  그림_nday(nd);
   그림_d1(d1);
   if (gr && gr.length) {
     묶음붙이기('groups1', 'delta1', 'delta-out1', gr.filter(g => g['종류'] === '조건 1개'));
     묶음붙이기('groups2', 'delta2', 'delta-out2', gr.filter(g => g['종류'] === '조건 2개'));
   }
   그림_curve(cv);
+}
+
+(async function () {
+  기본옵션();
+  const [nd, 목록] = await Promise.all([읽기('nday.json'), 읽기('창목록.json')]);
+  그림_nday(nd);          // 창과 무관하므로 한 번만 그림
+
+  const 창들 = (목록 && 목록['창']) || ['14일'];
+  const 탭 = document.getElementById('window-tabs');
+  if (탭) {
+    탭.innerHTML = 창들.map(c =>
+      `<button type="button" role="tab" data-창="${c}" aria-selected="false">평가 ${c}</button>`
+    ).join('');
+    탭.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (b) 창그리기(b.dataset.창);
+    });
+    // 창이 하나뿐이면 고를 게 없으니 단추를 숨김
+    탭.classList.toggle('hidden', 창들.length < 2);
+  }
+  await 창그리기((목록 && 목록['기본']) || 창들[0]);
 })();

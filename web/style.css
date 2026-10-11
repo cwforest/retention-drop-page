@@ -177,3 +177,16 @@ table.files td:last-child{color:var(--dim)}
 footer{background:var(--navy); color:rgba(255,255,255,.66); font-size:.8rem; padding:30px 0 44px}
 footer p{margin:0 0 4px}
 footer .right{color:rgba(255,255,255,.44); font-size:.74rem; margin-top:10px}
+
+/* ── 평가 창 전환 단추 ────────────────────────────────────────────── */
+.wintabs-wrap{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:26px 0 0}
+.wintabs-label{color:rgba(255,255,255,.55); font-size:.78rem; letter-spacing:.01em}
+.wintabs{display:inline-flex; gap:4px; padding:4px; border-radius:999px;
+         background:rgba(255,255,255,.10)}
+.wintabs button{appearance:none; border:0; cursor:pointer; font:inherit; font-size:.82rem;
+                font-weight:700; color:rgba(255,255,255,.72); background:transparent;
+                padding:7px 18px; border-radius:999px; transition:background .15s, color .15s;
+                white-space:nowrap}
+.wintabs button:hover{color:#fff; background:rgba(255,255,255,.10)}
+.wintabs button.on{color:var(--navy); background:var(--sky)}
+.wintabs button:focus-visible{outline:2px solid var(--sky); outline-offset:2px}
