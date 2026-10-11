@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="web/style.css?v=631b0e20">
+<link rel="stylesheet" href="web/style.css?v=c7584eac">
 </head>
 <body>
 
@@ -21,11 +21,6 @@
     전사 지표가 내려갔을 때, 원인을 검증할 <strong>유저 집단 후보를 자동으로 찾아 순위를 매기는</strong> 방법입니다.
     KKBox 음악 스트리밍 데이터로 만들고, <strong>정답을 아는 하락을 직접 심어</strong> 얼마나 작은 하락까지 잡아내는지 쟀습니다.
   </p>
-
-  <div class="wintabs-wrap">
-    <span class="wintabs-label">평가 기간을 눌러 바꿔 보세요</span>
-    <div id="window-tabs" class="wintabs hidden" role="tablist"></div>
-  </div>
 
   <div class="statrow">
     <div class="stat"><b>110만</b><span>2017년 3월 활동 유저</span></div>
@@ -161,18 +156,28 @@
     어떤 집단의 재방문을 δ%p 떨어뜨린 뒤, 방법이 그 집단을 찾아내는지 보는 것입니다.
   </p>
 
+  <div class="wintabs-wrap">
+    <span class="wintabs-label">평가 기간을 눌러 바꿔 보세요 — 아래 숫자가 전부 바뀝니다</span>
+    <div id="window-tabs" class="wintabs hidden" role="tablist"></div>
+  </div>
+  <p class="note win-note">
+    하락이 감지된 뒤 <strong id="win-days">—</strong> 치 데이터로 진단한 경우입니다
+    (<span id="win-range">—</span>). 짧게 볼수록 기준선을 멀리 내다보지 않아도 되어
+    <strong>같은 하락을 더 작을 때 잡아냅니다.</strong> <strong>2일이 본 분석</strong>이고 14일은 비교용입니다.
+  </p>
+
   <div class="pull">
-    <b><span class="n1">10</span><span class="ar">→</span><span class="n2">15.8</span><small>%p</small></b>
+    <b><span class="n1" id="pull-a">—</span><span class="ar">→</span><span class="n2" id="pull-b">—</span><small>%p</small></b>
     <p><strong>찾아내는 것</strong>과 <strong>“우연이 아니다”라고 말하는 것</strong>은 다릅니다.
-       511명짜리 집단은 <strong>10%p</strong>면 집어내지만, 유의하다고 보고하려면
-       <strong>15.8%p</strong>까지 떨어져야 합니다.
-       56,827명짜리 집단은 <strong>2%p → 3.0%p</strong>.</p>
+       <span id="pull-small">—</span>명짜리 집단은 <strong id="pull-a2">—</strong>면 집어내지만, 유의하다고 보고하려면
+       <strong id="pull-b2">—</strong>까지 떨어져야 합니다.
+       <span id="pull-tail"></span></p>
   </div>
 
   <h3 class="subhead">조건 하나로 정의되는 집단</h3>
   <p class="note">
-    <code>payment_method_id = 18</code> 처럼 변수 하나로 잘리는 집단입니다.
-    δ 5단계 × 10회 = <strong>집단당 50판</strong>을 돌린 실측값입니다.
+    <code id="ex1-name">—</code> 처럼 변수 하나로 잘리는 집단입니다.
+    <span id="ex1-runs">—</span>을 돌린 실측값입니다.
   </p>
 
   <div class="slider-box">
@@ -302,6 +307,6 @@
 </div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="web/app.js?v=1587934d"></script>
+<script src="web/app.js?v=e77d21a4"></script>
 </body>
 </html>

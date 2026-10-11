@@ -172,8 +172,14 @@ function 묶음그리기(상자, 목록) {
     const 찾음 = g['찾음δ'], 보고 = g['보고δ'];
     const w = (v) => Math.max(0, Math.min(100, (v / MAXδ) * 100));
     const 세그 = [];
-    if (찾음 != null) 세그.push(`<div class="seg-found" style="width:${w(보고 ?? MAXδ) - w(찾음)}%;margin-left:${w(찾음)}%"></div>`);
-    if (보고 != null) 세그.push(`<div class="seg-report" style="width:${100 - w(보고)}%"></div>`);
+    // 끝까지 못 찾은 집단은 아무것도 안 칠함.
+    // 보고δ 는 '그 집단의 t 가 판정선에 닿는 δ' 라서 못 찾아도 계산은 되는데,
+    // 여기서 '보고 가능' 은 **찾은 뒤에 유의한 것**을 뜻하므로 띠를 그리면 거짓말이 됨
+    // (10/12 에 못 찾은 집단 둘이 남색 띠를 길게 달고 있었음)
+    if (찾음 != null) {
+      세그.push(`<div class="seg-found" style="width:${w(보고 ?? MAXδ) - w(찾음)}%;margin-left:${w(찾음)}%"></div>`);
+      if (보고 != null) 세그.push(`<div class="seg-report" style="width:${100 - w(보고)}%"></div>`);
+    }
     const 크기 = g['평가행'] ? `평가 ${g['평가행'].toLocaleString()}행` : '';
     const r = g['희석r'] != null ? ` · 희석 ${g['희석r']}` : '';
     const 계산 = g['종류'] === '조건 2개' ? '(계산)' : '';
@@ -185,7 +191,9 @@ function 묶음그리기(상자, 목록) {
       <div class="track">${세그.join('')}<div class="marker" style="left:0%"></div></div>
       <div class="row-head">
         <span class="status">—</span>
-        <span class="gnums">찾음 ${찾음 != null ? 찾음 + '%p' : '끝까지 못 찾음'} · 보고 ${보고 != null ? 보고 + '%p' : '—'}${계산}</span>
+        <span class="gnums">${찾음 != null
+          ? `찾음 ${찾음}%p · 보고 ${보고 != null ? 보고 + '%p' : '—'}${계산}`
+          : `상한 ${(g['상한'] ?? MAXδ)}%p 까지 심어도 못 찾음`}</span>
       </div>
     </div>`;
   }).join('');
@@ -265,6 +273,48 @@ function 그림_curve(d) {
   }));
 }
 
+// 4)결과 의 본문 숫자 — 창을 바꾸면 글과 숫자가 어긋나므로 데이터에서 채움.
+// 조건 1개 집단 중 가장 작은 것과 가장 큰 것을 예로 씀
+function 결과문구(gr, mt) {
+  const 쓰기 = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const 날 = { '2일': '이틀', '14일': '2주' };
+  쓰기('win-days', 날[mt['창']] || mt['창']);
+  쓰기('win-range', mt['평가기간']);
+
+  const 하나 = (gr || []).filter(g => g['종류'] === '조건 1개' && g['유효인원'] != null);
+  if (!하나.length) return;
+  하나.sort((a, b) => a['유효인원'] - b['유효인원']);
+  const 작 = 하나[0], 큰 = 하나[하나.length - 1];
+  const pct = (v) => v == null ? '—' : v + '%p';
+
+  쓰기('pull-a', 작['찾음δ'] ?? '—');
+  쓰기('pull-b', 작['보고δ'] ?? '—');
+  쓰기('pull-a2', pct(작['찾음δ']));
+  쓰기('pull-b2', pct(작['보고δ']));
+  쓰기('pull-small', 작['유효인원'].toLocaleString());
+
+  // 큰 집단은 창에 따라 이야기가 달라짐 — 14일에서는 보고가 한참 뒤에 오지만
+  // 2일에서는 둘이 붙어 버림(판정선만 느슨해지고 순위 경쟁은 그대로이기 때문).
+  // 글을 고정해 두면 숫자와 어긋나므로 문장째 갈아끼움
+  const 꼬리 = document.getElementById('pull-tail');
+  if (꼬리) {
+    const 인원 = 큰['유효인원'].toLocaleString();
+    const ㄱ = 큰['찾음δ'], ㄴ = 큰['보고δ'];
+    꼬리.innerHTML = (ㄱ != null && ㄴ != null && ㄴ <= ㄱ * 1.05)
+      ? `${인원}명짜리 집단은 <strong>${pct(ㄱ)}</strong>과 <strong>${pct(ㄴ)}</strong>로
+         둘이 거의 겹칩니다 — 집단이 크면 유의성은 더 이상 병목이 아닙니다.`
+      : `${인원}명짜리 집단은 <strong>${pct(ㄱ)} → ${pct(ㄴ)}</strong>.`;
+  }
+
+  쓰기('ex1-name', 작['이름']);
+  // 판 수는 측정 기록에서 — δ 단계 수 × 단계마다 돌린 횟수
+  const 측 = 작['측정'] || [];
+  const 판 = 측.reduce((a, r) => a + (r['판수'] || 0), 0);
+  쓰기('ex1-runs', 측.length && 판
+    ? `δ ${측.length}단계 × ${Math.round(판 / 측.length)}회 = 집단당 ${판}판`
+    : '주입 실험');
+}
+
 // ── 시작 ─────────────────────────────────────────────────────────────
 // 평가 창을 두 개(2일·14일) 만들어 두고 단추로 갈아끼움. 같은 데이터·같은 모델인데
 // **평가 기간 길이만 다름** — 그래서 하한이 얼마나 달라지는지가 그대로 보임.
@@ -299,6 +349,7 @@ async function 창그리기(창) {
     }
   }
   그림_d1(d1);
+  if (mt) 결과문구(gr, mt);
   if (gr && gr.length) {
     묶음붙이기('groups1', 'delta1', 'delta-out1', gr.filter(g => g['종류'] === '조건 1개'));
     묶음붙이기('groups2', 'delta2', 'delta-out2', gr.filter(g => g['종류'] === '조건 2개'));

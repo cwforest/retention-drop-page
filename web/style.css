@@ -50,7 +50,9 @@ h1{font-weight:800; font-size:clamp(2rem,5vw,3.3rem); line-height:1.28;
 
 /* ── 절: 제목 단 + 본문 단 ────────────────────────────── */
 main section{padding:62px 0; border-top:1px solid var(--line)}
-@media (min-width:1000px){
+/* 두 칸 배치는 290 + 60 + 820 + 좌우 여백 64 = 1,234px 가 있어야 들어감.
+   1000px 로 걸어 두니 1,000~1,233px 창에서 그림이 오른쪽으로 삐져나갔음 */
+@media (min-width:1240px){
   main section > .inner{display:grid; grid-template-columns:290px minmax(0,820px);
     gap:0 60px; align-items:start; justify-content:center}
   .sec-head{position:sticky; top:28px}
@@ -190,3 +192,12 @@ footer .right{color:rgba(255,255,255,.44); font-size:.74rem; margin-top:10px}
 .wintabs button:hover{color:#fff; background:rgba(255,255,255,.10)}
 .wintabs button.on{color:var(--navy); background:var(--sky)}
 .wintabs button:focus-visible{outline:2px solid var(--sky); outline-offset:2px}
+
+/* 단추가 머리말(감청)에서 본문(흰 바탕)으로 내려와 색을 다시 잡음 */
+.sec-body .wintabs-wrap{margin:22px 0 10px; align-items:center}
+.sec-body .wintabs-label{color:var(--dim); font-size:.8rem}
+.sec-body .wintabs{background:rgba(12,46,92,.07)}
+.sec-body .wintabs button{color:var(--dim)}
+.sec-body .wintabs button:hover{color:var(--navy); background:rgba(12,46,92,.08)}
+.sec-body .wintabs button.on{color:#fff; background:var(--navy)}
+.win-note{margin:0 0 6px}
