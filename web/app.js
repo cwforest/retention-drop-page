@@ -176,9 +176,13 @@ function 묶음그리기(상자, 목록) {
     // 보고δ 는 '그 집단의 t 가 판정선에 닿는 δ' 라서 못 찾아도 계산은 되는데,
     // 여기서 '보고 가능' 은 **찾은 뒤에 유의한 것**을 뜻하므로 띠를 그리면 거짓말이 됨
     // (10/12 에 못 찾은 집단 둘이 남색 띠를 길게 달고 있었음)
+    // 보고는 **찾은 뒤에야** 뜻이 있으므로 찾음보다 앞설 수 없음. 그래서 둘 중 큰 쪽이 경계임.
+    // 이걸 안 하면 찾음 > 보고 인 집단에서 띠 너비가 음수가 돼 막대가 깨짐
+    // (10/12 — 9-8 로 찾음이 12.81%p 가 된 집단에서 −54% 가 나왔음. 조건 2개 15개 중 5개가 찾음 > 보고임)
+    const 경계 = 찾음 != null ? Math.max(찾음, 보고 ?? MAXδ) : null;
     if (찾음 != null) {
-      세그.push(`<div class="seg-found" style="width:${w(보고 ?? MAXδ) - w(찾음)}%;margin-left:${w(찾음)}%"></div>`);
-      if (보고 != null) 세그.push(`<div class="seg-report" style="width:${100 - w(보고)}%"></div>`);
+      세그.push(`<div class="seg-found" style="width:${w(경계) - w(찾음)}%;margin-left:${w(찾음)}%"></div>`);
+      if (보고 != null) 세그.push(`<div class="seg-report" style="width:${100 - w(경계)}%"></div>`);
     }
     const 크기 = g['평가행'] ? `평가 ${g['평가행'].toLocaleString()}행` : '';
     const r = g['희석r'] != null ? ` · 희석 ${g['희석r']}` : '';
@@ -193,6 +197,7 @@ function 묶음그리기(상자, 목록) {
         <span class="status">—</span>
         <span class="gnums">${찾음 != null
           ? `찾음 ${찾음}%p · 보고 ${보고 != null ? 보고 + '%p' : '—'}${계산}`
+            + (보고 != null && 찾음 > 보고 ? ' · 순위가 병목' : '')
           : `상한 ${(g['상한'] ?? MAXδ)}%p 까지 심어도 못 찾음`}</span>
       </div>
     </div>`;
