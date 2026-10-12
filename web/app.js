@@ -192,7 +192,10 @@ function 묶음그리기(상자, 목록) {
         <span class="gname">${g['이름']}</span>
         <span class="gsize">${크기}${r}</span>
       </div>
-      <div class="track">${세그.join('')}<div class="marker" style="left:0%"></div></div>
+      <div class="track" tabindex="0" role="slider"
+           aria-label="${g['이름']} 에 심을 하락 폭"
+           aria-valuemin="0" aria-valuemax="${MAXδ}" aria-valuenow="0">
+        ${세그.join('')}<div class="marker" style="left:0%"></div></div>
       <div class="row-head">
         <span class="status">—</span>
         <span class="gnums">${찾음 != null
@@ -204,36 +207,113 @@ function 묶음그리기(상자, 목록) {
   }).join('');
 }
 
-function 묶음갱신(상자, 목록, δ, 출력) {
-  출력.textContent = δ.toFixed(1);
+// 막대 한 줄을 그 줄의 δ 로 다시 그림. 개별 이면 위 슬라이더와 다른 값을 쓰는 중임
+function 행갱신(row, g, δ, 개별) {
+  const track = row.querySelector('.track');
+  track.querySelector('.marker').style.left = Math.min(100, (δ / MAXδ) * 100) + '%';
+  const s = row.querySelector('.status');
+  let 글, 반;
+  if (g['찾음δ'] == null || δ < g['찾음δ']) { 글 = '못 찾음'; 반 = 's-none'; }
+  else if (g['보고δ'] == null || δ < g['보고δ']) { 글 = '찾았지만 보고 불가'; 반 = 's-found'; }
+  else { 글 = '보고 가능'; 반 = 's-report'; }
+  // 측정한 δ 근처에 서 있으면 그 판의 실측값을 같이 보여줌.
+  // 전에는 `=== δ` 로 찾았는데 측정 δ 에 0.6·0.9·1.2 처럼 0.5 눈금에 없는 값이 있어
+  // 절반은 아예 뜰 수 없었음 (10/12). 가장 가까운 것을 집고 실측 δ 를 같이 적음
+  const 측 = (g['측정'] || []).filter(m => Math.abs(m['δ'] - δ) < 0.3)
+    .sort((a, b) => Math.abs(a['δ'] - δ) - Math.abs(b['δ'] - δ))[0];
+  if (측) {
+    const 딴값 = Math.abs(측['δ'] - δ) > 0.01 ? `실측 δ ${측['δ']}%p — ` : '';
+    글 += `  ·  ${딴값}Hit@3 ${측['Hit3'].toFixed(2)} · 겹침 ${측['겹침'].toFixed(2)} · t ${측['정답t'].toFixed(2)}`;
+  }
+  s.textContent = (개별 ? `δ ${δ.toFixed(1)}%p · ` : '') + 글;
+  s.className = 'status ' + 반;
+  row.classList.toggle('own', !!개별);
+  track.setAttribute('aria-valuenow', δ);
+  track.setAttribute('aria-valuetext', `${δ.toFixed(1)}%p — ${글}`);
+}
+
+// 기준δ = 위 슬라이더 값. 개별[i] 이 null 이 아니면 그 줄은 자기 값을 씀
+function 묶음갱신(상자, 목록, 기준δ, 출력, 개별) {
+  출력.textContent = 기준δ.toFixed(1);
   상자.querySelectorAll('.row').forEach(row => {
-    const g = 목록[+row.dataset.i];
-    row.querySelector('.marker').style.left = Math.min(100, (δ / MAXδ) * 100) + '%';
-    const s = row.querySelector('.status');
-    let 글, 반;
-    if (g['찾음δ'] == null || δ < g['찾음δ']) { 글 = '못 찾음'; 반 = 's-none'; }
-    else if (g['보고δ'] == null || δ < g['보고δ']) { 글 = '찾았지만 보고 불가'; 반 = 's-found'; }
-    else { 글 = '보고 가능'; 반 = 's-report'; }
-    // 측정한 δ 위에 서 있으면 그 판의 실측값을 같이 보여줌
-    const 측 = (g['측정'] || []).find(m => Math.abs(m['δ'] - δ) < 1e-9);
-    if (측) 글 += `  ·  Hit@3 ${측['Hit3'].toFixed(2)} · 겹침 ${측['겹침'].toFixed(2)} · t ${측['정답t'].toFixed(2)}`;
-    s.textContent = 글;
-    s.className = 'status ' + 반;
+    const i = +row.dataset.i;
+    const 내값 = 개별[i];
+    행갱신(row, 목록[i], 내값 == null ? 기준δ : 내값, 내값 != null);
+  });
+}
+
+// 막대를 직접 끌기 — 그 줄만 움직임 (위 슬라이더는 전부 한꺼번에 움직임)
+function 끌기붙이기(상자, 목록, 개별, 슬, 다시) {
+  // 0.5 눈금에 맞추되, 실측한 δ 가 0.3 안에 있으면 **거기에 딱 붙임**.
+  // 실측값이 있는 자리에 정확히 설 수 있어야 Hit@3·겹침이 보이기 때문임
+  const 맞추기 = (g, v) => {
+    const 눈금 = Math.round(Math.max(0, Math.min(MAXδ, v)) / 0.5) * 0.5;
+    const 측 = (g['측정'] || []).filter(m => Math.abs(m['δ'] - 눈금) < 0.3)
+      .sort((a, b) => Math.abs(a['δ'] - 눈금) - Math.abs(b['δ'] - 눈금))[0];
+    return 측 ? 측['δ'] : 눈금;
+  };
+  const 자리값 = (track, g, clientX) => {
+    const r = track.getBoundingClientRect();
+    return 맞추기(g, r.width ? ((clientX - r.left) / r.width) * MAXδ : 0);
+  };
+
+  상자.addEventListener('pointerdown', (e) => {
+    const track = e.target.closest('.track');
+    if (!track) return;
+    const i = +track.closest('.row').dataset.i;
+    e.preventDefault();                       // 글자가 선택되는 것을 막음
+    track.focus();
+    track.setPointerCapture(e.pointerId);     // 막대 밖으로 나가도 계속 따라옴
+    const 옮김 = (ev) => { 개별[i] = 자리값(track, 목록[i], ev.clientX); 다시(); };
+    const 끝 = () => {
+      track.removeEventListener('pointermove', 옮김);
+      track.removeEventListener('pointerup', 끝);
+      track.removeEventListener('pointercancel', 끝);
+    };
+    track.addEventListener('pointermove', 옮김);
+    track.addEventListener('pointerup', 끝);
+    track.addEventListener('pointercancel', 끝);
+    옮김(e);
+  });
+
+  // 키보드 — 탭으로 막대에 들어와 좌우 화살표. Esc 면 위 슬라이더로 되돌림
+  상자.addEventListener('keydown', (e) => {
+    const track = e.target.closest('.track');
+    if (!track) return;
+    const i = +track.closest('.row').dataset.i;
+    const 지금 = 개별[i] == null ? +슬.value : 개별[i];
+    let v;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') v = 지금 - 0.5;
+    else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') v = 지금 + 0.5;
+    else if (e.key === 'Home') v = 0;
+    else if (e.key === 'End') v = MAXδ;
+    else if (e.key === 'Escape') { 개별[i] = null; 다시(); e.preventDefault(); return; }
+    else return;
+    e.preventDefault();
+    개별[i] = Math.round(Math.max(0, Math.min(MAXδ, v)) / 0.5) * 0.5;
+    다시();
   });
 }
 
 function 묶음붙이기(상자id, 슬라이더id, 출력id, 목록) {
-  const 상자 = document.getElementById(상자id);
   // 창을 바꿀 때마다 addEventListener 가 쌓이면 한 번 끌 때 여러 번 그려짐.
-  // 노드를 복제해 바꿔치면 옛 리스너가 통째로 떨어짐
+  // 노드를 복제해 바꿔치면 옛 리스너가 통째로 떨어짐 (상자도 끌기 리스너를 달므로 같이 함)
+  const 옛상 = document.getElementById(상자id);
+  if (옛상) 옛상.replaceWith(옛상.cloneNode(false));
+  const 상자 = document.getElementById(상자id);
   const 옛슬 = document.getElementById(슬라이더id);
   옛슬.replaceWith(옛슬.cloneNode(true));
   const 슬 = document.getElementById(슬라이더id);
   const 출력 = document.getElementById(출력id);
   if (!상자 || !슬 || !목록.length) return;
+
+  const 개별 = new Array(목록.length).fill(null);   // null = 위 슬라이더를 따름
   묶음그리기(상자, 목록);
-  슬.addEventListener('input', () => 묶음갱신(상자, 목록, +슬.value, 출력));
-  묶음갱신(상자, 목록, +슬.value, 출력);
+  const 다시 = () => 묶음갱신(상자, 목록, +슬.value, 출력, 개별);
+  // 위 슬라이더는 **일괄** — 따로 움직여 둔 줄도 전부 같은 값으로 되돌림
+  슬.addEventListener('input', () => { 개별.fill(null); 다시(); });
+  끌기붙이기(상자, 목록, 개별, 슬, 다시);
+  다시();
 }
 
 // ── 하한 곡선 ────────────────────────────────────────────────────────

@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="web/style.css?v=c7584eac">
+<link rel="stylesheet" href="web/style.css?v=eb236cf4">
 </head>
 <body>
 
@@ -189,7 +189,9 @@
   </p>
 
   <div class="slider-box">
-    <p class="howto">↓ 아래 <strong>막대를 좌우로 끌어</strong> 하락 폭을 바꿔 보세요</p>
+    <p class="howto">아래 <strong>막대를 직접 끌면 그 집단만</strong> 움직입니다.
+      슬라이더는 <strong>전부 한꺼번에</strong>(따로 움직여 둔 것도 다시 맞춰짐).
+      따로 움직인 줄은 마커가 <strong>빨간색</strong>이 됩니다</p>
     <label for="delta1">심은 하락 폭 <output id="delta-out1">5.0</output> <span class="note">%p</span></label>
     <input type="range" id="delta1" min="0" max="20" step="0.5" value="5">
     <div class="legend">
@@ -212,7 +214,8 @@
   </p>
 
   <div class="slider-box">
-    <p class="howto">↓ 이쪽도 <strong>막대를 끌어</strong> 보세요</p>
+    <p class="howto">이쪽도 같습니다 — <strong>막대는 그 집단만</strong>, <strong>슬라이더는 전부</strong>.
+      막대 위에서 좌우 화살표 키도 되고, <kbd>Esc</kbd> 면 슬라이더 값으로 돌아갑니다</p>
     <label for="delta2">심은 하락 폭 <output id="delta-out2">5.0</output> <span class="note">%p</span></label>
     <input type="range" id="delta2" min="0" max="20" step="0.5" value="5">
     <div class="legend">
@@ -324,6 +327,6 @@
 </div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="web/app.js?v=96a9f4dc"></script>
+<script src="web/app.js?v=c5b4028a"></script>
 </body>
 </html>

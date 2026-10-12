@@ -150,13 +150,21 @@ input[type=range]{width:100%; accent-color:var(--navy); height:22px}
 .gname{font-family:var(--mono); font-size:.9rem; font-weight:700}
 .gsize{color:var(--faint); font-size:.78rem; font-family:var(--mono)}
 .track{position:relative; height:20px; overflow:hidden; margin:11px 0 8px;
-  display:flex; background:var(--none)}
+  display:flex; background:var(--none);
+  /* 직접 끌어 그 집단만 움직일 수 있음. pan-y 라 세로 스크롤은 그대로 됨 */
+  cursor:ew-resize; touch-action:pan-y}
+.track:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 .seg-found{background:var(--found)} .seg-report{background:var(--report)}
 /* 마커는 연회색 구간과 남색 구간 위를 모두 지나므로, 흰 심지에 어두운 테두리를 둘러
    어느 쪽에서도 보이게 함 */
 .marker{position:absolute; top:-5px; bottom:-5px; width:3px; background:#fff;
   box-shadow:0 0 0 1.5px rgba(0,0,0,.6); border-radius:1px}
+/* 따로 움직여 둔 줄은 마커를 강조색으로 — 위 슬라이더와 값이 다르다는 표시임 */
+/* --accent 는 남색 띠(--report)와 같은 값이라 그 위에서 안 보임 → 안 쓰이던 --warm 을 씀 */
+.row.own .marker{background:var(--warm); box-shadow:0 0 0 1.5px rgba(255,255,255,.85); width:4px}
 .status{font-size:.9rem; font-weight:700}
+kbd{font-family:var(--mono); font-size:.8em; border:1px solid var(--line);
+  border-radius:3px; padding:0 4px; background:var(--card)}
 .s-none{color:var(--faint)} .s-found{color:var(--sky-2)} .s-report{color:var(--navy)}
 .gnums{color:var(--faint); font-size:.77rem; font-family:var(--mono)}
 
