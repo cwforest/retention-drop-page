@@ -164,13 +164,20 @@ function 그림_d1(d) {
 
 // ── δ 슬라이더 ───────────────────────────────────────────────────────
 // 조건 1개 묶음과 조건 2개 묶음을 각각 그림. 둘은 슬라이더도 따로 씀.
-const MAXδ = 20;
+const MAXδ = 20;      // 기본 눈금. 묶음마다 다를 수 있어 상자에 적어 두고 꺼내 씀
+// 조건 3개는 찾음 하한이 34%p 까지 올라가 20 으로는 막대가 잘림.
+// 묶음 상자(.grow)의 data-max 에 적어 두고, 줄·끌기·키보드가 모두 거기서 읽음
+const 칸최대 = (el) => {
+  const 상자 = el.classList && el.classList.contains('grow') ? el : el.closest('.grow');
+  return (상자 && +상자.dataset.max) || MAXδ;
+};
 
-function 묶음그리기(상자, 목록) {
+function 묶음그리기(상자, 목록, 최대) {
   상자.className = 'grow';
+  상자.dataset.max = 최대;
   상자.innerHTML = 목록.map((g, i) => {
     const 찾음 = g['찾음δ'], 보고 = g['보고δ'];
-    const w = (v) => Math.max(0, Math.min(100, (v / MAXδ) * 100));
+    const w = (v) => Math.max(0, Math.min(100, (v / 최대) * 100));
     const 세그 = [];
     // 끝까지 못 찾은 집단은 아무것도 안 칠함.
     // 보고δ 는 '그 집단의 t 가 판정선에 닿는 δ' 라서 못 찾아도 계산은 되는데,
@@ -179,29 +186,41 @@ function 묶음그리기(상자, 목록) {
     // 보고는 **찾은 뒤에야** 뜻이 있으므로 찾음보다 앞설 수 없음. 그래서 둘 중 큰 쪽이 경계임.
     // 이걸 안 하면 찾음 > 보고 인 집단에서 띠 너비가 음수가 돼 막대가 깨짐
     // (10/12 — 9-8 로 찾음이 12.81%p 가 된 집단에서 −54% 가 나왔음. 조건 2개 15개 중 5개가 찾음 > 보고임)
-    const 경계 = 찾음 != null ? Math.max(찾음, 보고 ?? MAXδ) : null;
+    const 경계 = 찾음 != null ? Math.max(찾음, 보고 ?? 최대) : null;
     if (찾음 != null) {
       세그.push(`<div class="seg-found" style="width:${w(경계) - w(찾음)}%;margin-left:${w(찾음)}%"></div>`);
       if (보고 != null) 세그.push(`<div class="seg-report" style="width:${100 - w(경계)}%"></div>`);
     }
     const 크기 = g['평가행'] ? `평가 ${g['평가행'].toLocaleString()}행` : '';
     const r = g['희석r'] != null ? ` · 희석 ${g['희석r']}` : '';
-    const 계산 = g['종류'] === '조건 2개' ? '(계산)' : '';
+    const 계산 = g['종류'] === '조건 1개' ? '' : '(계산)';
+    // 도달(빔) 관문에 막힌 집단 — 조건 3개에서 처음 나옴. 왜 하한이 큰지가 여기 있음
+    const 관문 = g['막힘'] === '도달(빔)'
+      ? `<span class="tag-gate" title="부모가 상위 20칸에 들어야 2단계로 뻗음">도달</span>` : '';
     return `<div class="row" data-i="${i}">
       <div class="row-head">
-        <span class="gname">${g['이름']}</span>
+        <span class="gname">${g['이름']}${관문}</span>
         <span class="gsize">${크기}${r}</span>
       </div>
       <div class="track" tabindex="0" role="slider"
            aria-label="${g['이름']} 에 심을 하락 폭"
-           aria-valuemin="0" aria-valuemax="${MAXδ}" aria-valuenow="0">
+           aria-valuemin="0" aria-valuemax="${최대}" aria-valuenow="0">
         ${세그.join('')}<div class="marker" style="left:0%"></div></div>
       <div class="row-head">
         <span class="status">—</span>
         <span class="gnums">${찾음 != null
           ? `찾음 ${찾음}%p · 보고 ${보고 != null ? 보고 + '%p' : '—'}${계산}`
-            + (보고 != null && 찾음 > 보고 ? ' · 순위가 병목' : '')
-          : `상한 ${(g['상한'] ?? MAXδ)}%p 까지 심어도 못 찾음`}</span>
+            + (g['도달δ'] != null ? ` · 도달 ${g['도달δ']}%p${계산}` : '')
+            // 찾음이 보고보다 뒤면 「유의한가」가 아니라 다른 것이 병목임.
+            // 도달(빔)에 막힌 집단은 원인이 순위 경쟁이 아니라 **부모가 빔에 못 드는 것**이라
+            // 둘을 구분해 적음 (조건 3개 15개 중 6개가 도달 쪽임)
+            + (보고 != null && 찾음 > 보고
+                ? (g['막힘'] === '도달(빔)' ? ' · 도달이 병목' : ' · 순위가 병목') : '')
+          // 상한이 100%p 를 넘으면 애초에 심을 수가 없음(뒤집을 행이 그만큼 없음).
+          // 그 숫자를 그대로 보이면 「105%p 까지 해봤다」로 읽히므로 예측값으로 바꿔 적음
+          : ((g['상한'] ?? 0) > 100 && g['도달δ'] != null
+              ? `도달 ${g['도달δ']}%p${계산} — 심을 수 있는 한계를 넘어 못 찾음`
+              : `상한 ${(g['상한'] ?? 최대)}%p 까지 심어도 못 찾음`)}</span>
       </div>
     </div>`;
   }).join('');
@@ -210,7 +229,8 @@ function 묶음그리기(상자, 목록) {
 // 막대 한 줄을 그 줄의 δ 로 다시 그림. 개별 이면 위 슬라이더와 다른 값을 쓰는 중임
 function 행갱신(row, g, δ, 개별) {
   const track = row.querySelector('.track');
-  track.querySelector('.marker').style.left = Math.min(100, (δ / MAXδ) * 100) + '%';
+  const 최대 = 칸최대(row);
+  track.querySelector('.marker').style.left = Math.min(100, (δ / 최대) * 100) + '%';
   const s = row.querySelector('.status');
   let 글, 반;
   if (g['찾음δ'] == null || δ < g['찾음δ']) { 글 = '못 찾음'; 반 = 's-none'; }
@@ -244,17 +264,18 @@ function 묶음갱신(상자, 목록, 기준δ, 출력, 개별) {
 
 // 막대를 직접 끌기 — 그 줄만 움직임 (위 슬라이더는 전부 한꺼번에 움직임)
 function 끌기붙이기(상자, 목록, 개별, 슬, 다시) {
+  const 최대 = 칸최대(상자);
   // 0.5 눈금에 맞추되, 실측한 δ 가 0.3 안에 있으면 **거기에 딱 붙임**.
   // 실측값이 있는 자리에 정확히 설 수 있어야 Hit@3·겹침이 보이기 때문임
   const 맞추기 = (g, v) => {
-    const 눈금 = Math.round(Math.max(0, Math.min(MAXδ, v)) / 0.5) * 0.5;
+    const 눈금 = Math.round(Math.max(0, Math.min(최대, v)) / 0.5) * 0.5;
     const 측 = (g['측정'] || []).filter(m => Math.abs(m['δ'] - 눈금) < 0.3)
       .sort((a, b) => Math.abs(a['δ'] - 눈금) - Math.abs(b['δ'] - 눈금))[0];
     return 측 ? 측['δ'] : 눈금;
   };
   const 자리값 = (track, g, clientX) => {
     const r = track.getBoundingClientRect();
-    return 맞추기(g, r.width ? ((clientX - r.left) / r.width) * MAXδ : 0);
+    return 맞추기(g, r.width ? ((clientX - r.left) / r.width) * 최대 : 0);
   };
 
   상자.addEventListener('pointerdown', (e) => {
@@ -286,11 +307,11 @@ function 끌기붙이기(상자, 목록, 개별, 슬, 다시) {
     if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') v = 지금 - 0.5;
     else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') v = 지금 + 0.5;
     else if (e.key === 'Home') v = 0;
-    else if (e.key === 'End') v = MAXδ;
+    else if (e.key === 'End') v = 최대;
     else if (e.key === 'Escape') { 개별[i] = null; 다시(); e.preventDefault(); return; }
     else return;
     e.preventDefault();
-    개별[i] = Math.round(Math.max(0, Math.min(MAXδ, v)) / 0.5) * 0.5;
+    개별[i] = Math.round(Math.max(0, Math.min(최대, v)) / 0.5) * 0.5;
     다시();
   });
 }
@@ -308,7 +329,8 @@ function 묶음붙이기(상자id, 슬라이더id, 출력id, 목록) {
   if (!상자 || !슬 || !목록.length) return;
 
   const 개별 = new Array(목록.length).fill(null);   // null = 위 슬라이더를 따름
-  묶음그리기(상자, 목록);
+  const 최대 = +슬.max || MAXδ;                     // 눈금은 HTML 의 슬라이더가 정함
+  묶음그리기(상자, 목록, 최대);
   const 다시 = () => 묶음갱신(상자, 목록, +슬.value, 출력, 개별);
   // 위 슬라이더는 **일괄** — 따로 움직여 둔 줄도 전부 같은 값으로 되돌림
   슬.addEventListener('input', () => { 개별.fill(null); 다시(); });
@@ -440,6 +462,7 @@ async function 창그리기(창) {
   if (gr && gr.length) {
     묶음붙이기('groups1', 'delta1', 'delta-out1', gr.filter(g => g['종류'] === '조건 1개'));
     묶음붙이기('groups2', 'delta2', 'delta-out2', gr.filter(g => g['종류'] === '조건 2개'));
+    묶음붙이기('groups3', 'delta3', 'delta-out3', gr.filter(g => g['종류'] === '조건 3개'));
   }
   그림_curve(cv);
 }

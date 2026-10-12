@@ -209,3 +209,8 @@ footer .right{color:rgba(255,255,255,.44); font-size:.74rem; margin-top:10px}
 .sec-body .wintabs button:hover{color:var(--navy); background:rgba(12,46,92,.08)}
 .sec-body .wintabs button.on{color:#fff; background:var(--navy)}
 .win-note{margin:0 0 6px}
+
+/* 도달(빔) 관문에 막힌 집단 표시 — 조건 3개에서 처음 나옴 */
+.tag-gate{display:inline-block; background:var(--navy); color:#fff; font-size:.68rem;
+  font-weight:700; padding:1px 7px; border-radius:999px; letter-spacing:.02em;
+  vertical-align:.08em; margin-left:6px}
