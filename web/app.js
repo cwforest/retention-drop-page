@@ -389,10 +389,19 @@ function 결과문구(gr, mt) {
   쓰기('win-days', 날[mt['창']] || mt['창']);
   쓰기('win-range', mt['평가기간']);
 
-  const 하나 = (gr || []).filter(g => g['종류'] === '조건 1개' && g['유효인원'] != null);
+  // 목록에서 조건 1개를 뺐으므로 인용구도 조건 2개로. 조건 2개는 유효 인원을
+  // 재지 않아 평가 행으로 크기를 말함. 못 찾은 집단은 보여 줄 숫자가 없어 뺌
+  const 하나 = (gr || []).filter(g => g['종류'] === '조건 2개'
+    && g['평가행'] != null && g['찾음δ'] != null && g['보고δ'] != null);
   if (!하나.length) return;
-  하나.sort((a, b) => a['유효인원'] - b['유효인원']);
-  const 작 = 하나[0], 큰 = 하나[하나.length - 1];
+  // 앞 예시는 **찾음과 보고의 간격이 가장 큰 집단** — 인용구가 하려는 말이 그것임.
+  // 크기로 고르면 조건 2개에서는 찾음 > 보고 인 집단이 걸려 문장이 거꾸로 됨
+  // (10/14 — 「12.5%p면 집어내지만 보고하려면 11.66%p」가 나왔음)
+  const 간격 = (g) => g['보고δ'] - g['찾음δ'];
+  const 작 = [...하나].sort((a, b) => 간격(b) - 간격(a))[0];
+  // 뒤 예시는 가장 큰 집단 — 거기서는 둘이 붙거나 뒤집힘
+  const 큰 = [...하나].sort((a, b) => a['평가행'] - b['평가행']).pop();
+  if (간격(작) <= 0) return;      // 간격이 하나도 안 벌어지면 이 인용구는 할 말이 없음
   const pct = (v) => v == null ? '—' : v + '%p';
 
   쓰기('pull-a', 작['찾음δ'] ?? '—');
@@ -400,20 +409,48 @@ function 결과문구(gr, mt) {
   쓰기('pull-a2', pct(작['찾음δ']));
   쓰기('pull-b2', pct(작['보고δ']));
   쓰기('pull-small-name', 작['이름']);
-  쓰기('pull-small', 작['유효인원'].toLocaleString());
+  쓰기('pull-small', 작['평가행'].toLocaleString());
 
   // 큰 집단은 창에 따라 이야기가 달라짐 — 14일에서는 보고가 한참 뒤에 오지만
   // 2일에서는 둘이 붙어 버림(판정선만 느슨해지고 순위 경쟁은 그대로이기 때문).
   // 글을 고정해 두면 숫자와 어긋나므로 문장째 갈아끼움
   const 꼬리 = document.getElementById('pull-tail');
   if (꼬리) {
-    const 인원 = 큰['유효인원'].toLocaleString();
-    const 이름 = `<code>${큰['이름']}</code> 유효 인원 ${인원}명짜리 집단`;
+    const 인원 = 큰['평가행'].toLocaleString();
+    const 이름 = `<code>${큰['이름']}</code> 평가 ${인원}행짜리 집단`;
     const ㄱ = 큰['찾음δ'], ㄴ = 큰['보고δ'];
     꼬리.innerHTML = (ㄱ != null && ㄴ != null && ㄴ <= ㄱ * 1.05)
       ? `${이름}은 <strong>${pct(ㄱ)}</strong>과 <strong>${pct(ㄴ)}</strong>로
          둘이 거의 겹칩니다 — 집단이 크면 유의성은 더 이상 병목이 아닙니다.`
       : `${이름}은 <strong>${pct(ㄱ)} → ${pct(ㄴ)}</strong>.`;
+  }
+
+  // 도달(빔) 관문 — 조건 수마다 몇 개가 걸렸나. 창을 바꾸면 같이 바뀜
+  const 센다 = (종류) => {
+    const 목록 = (gr || []).filter(g => g['종류'] === 종류);
+    const 막힘 = 목록.filter(g => g['막힘'] === '도달(빔)');
+    return { 전체: 목록.length, 막힘: 막힘.length, 것들: 막힘 };
+  };
+  const g2 = 센다('조건 2개'), g3 = 센다('조건 3개');
+  쓰기('gate2', `${g2.전체}개 중 ${g2.막힘}개`);
+  쓰기('gate3', `${g3.전체}개 중 ${g3.막힘}개`);
+
+  // 도달에 막힌 집단이 「보고만 보면」 몇 배를 더 떨어뜨려야 하나
+  const 배 = g3.것들.filter(x => x['보고δ'] > 0 && x['도달δ'] != null)
+    .map(x => x['도달δ'] / x['보고δ']).sort((p, q) => p - q);
+  쓰기('gate-x', 배.length
+    ? (배[0].toFixed(1) + '~' + 배[배.length - 1].toFixed(1) + '배') : '여러 배');
+
+  // 예측한 문턱 바로 위에서 켜진 집단들 — 실제로 맞았다는 증거
+  const 맞은것 = g3.것들.filter(x => x['찾음δ'] != null && x['도달δ'] != null
+    && x['찾음δ'] >= x['도달δ'] && x['찾음δ'] <= x['도달δ'] * 1.25);
+  const 보기칸 = document.getElementById('gate-ex');
+  if (보기칸) {
+    보기칸.innerHTML = 맞은것.length >= 2
+      ? `실제로 ${맞은것.length}개 집단이 <strong>예측한 문턱 바로 위에서</strong> 켜졌습니다 `
+        + `(앞 4개만 적으면 ` + 맞은것.slice(0, 4)
+            .map(x => `${x['도달δ']}→${x['찾음δ']}`).join(', ') + ').'
+      : '';
   }
 
   쓰기('ex1-name', 작['이름']);
@@ -423,6 +460,54 @@ function 결과문구(gr, mt) {
   쓰기('ex1-runs', 측.length && 판
     ? `δ ${측.length}단계 × ${Math.round(판 / 측.length)}회 = 집단당 ${판}판`
     : '주입 실험');
+}
+
+// ── 돌려보기 순위표 ──────────────────────────────────────────────────
+// 브라우저에서 빔 서치를 돌릴 수 없어 scripts/build_demo_data.py 가 미리 돌려 둔
+// 결과를 읽기만 함. 상황(하락 없음 / 하락 심음)을 눌러 바꿈
+function 그림_demo(d) {
+  const 묶음 = document.getElementById('demo-tabs');
+  const 몸 = document.getElementById('demo-rows');
+  const 설명 = document.getElementById('demo-desc');
+  if (!묶음 || !몸 || !d || !d['시나리오'] || !d['시나리오'].length) {
+    const 절 = document.getElementById('try');
+    if (절) 절.classList.add('hidden');      // 데이터가 없으면 절째로 숨김
+    return;
+  }
+  const 판정선 = d['판정선'];
+  const 선 = document.getElementById('demo-line');
+  if (선) 선.textContent = 't = ' + 판정선.toFixed(2);
+
+  const 그리기 = (n) => {
+    const sc = d['시나리오'][n];
+    for (const b of 묶음.querySelectorAll('button')) {
+      const 고름 = +b.dataset.i === n;
+      b.classList.toggle('on', 고름);
+      b.setAttribute('aria-selected', 고름 ? 'true' : 'false');
+    }
+    설명.innerHTML = sc['설명'];
+    몸.innerHTML = sc['순위'].map(r => {
+      // 판정선보다 아래면 「우연이라 보기 어렵다」 — 진하게
+      const 셈 = r['t'] <= 판정선 ? ' class="hit"' : '';
+      const 표 = r['심은것'] ? '<span class="mine">심은 집단</span>' : '';
+      return `<tr${셈}>
+        <td class="r num">${r['순위']}</td>
+        <td class="g">${r['가설']}${표}</td>
+        <td class="r num">${Math.round(r['유효인원']).toLocaleString()}</td>
+        <td class="r num">${r['보정후'].toFixed(2)}%p</td>
+        <td class="r num">${r['t'].toFixed(2)}</td>
+      </tr>`;
+    }).join('');
+  };
+
+  묶음.innerHTML = d['시나리오'].map((sc, i) =>
+    `<button type="button" role="tab" data-i="${i}" aria-selected="false">${sc['이름']}</button>`
+  ).join('');
+  묶음.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (b) 그리기(+b.dataset.i);
+  });
+  그리기(0);
 }
 
 // ── 시작 ─────────────────────────────────────────────────────────────
@@ -455,13 +540,15 @@ async function 창그리기(창) {
       // 큰 수는 '1,000만' 꼴로 — 머리말 숫자가 열두 자리로 늘어지면 읽히지 않음
       el.textContent = el.dataset.fmt === '만'
         ? Math.round(v / 10000).toLocaleString() + '만'
-        : v.toLocaleString();
+        // 편차처럼 부호가 뜻을 갖는 값은 + 를 붙여 씀
+        : el.dataset.fmt === '부호'
+          ? (v >= 0 ? '+' : '') + v.toFixed(2)
+          : v.toLocaleString();
     }
   }
   그림_d1(d1);
   if (mt) 결과문구(gr, mt);
   if (gr && gr.length) {
-    묶음붙이기('groups1', 'delta1', 'delta-out1', gr.filter(g => g['종류'] === '조건 1개'));
     묶음붙이기('groups2', 'delta2', 'delta-out2', gr.filter(g => g['종류'] === '조건 2개'));
     묶음붙이기('groups3', 'delta3', 'delta-out3', gr.filter(g => g['종류'] === '조건 3개'));
   }
@@ -470,8 +557,10 @@ async function 창그리기(창) {
 
 (async function () {
   기본옵션();
-  const [nd, 목록] = await Promise.all([읽기('nday.json'), 읽기('창목록.json')]);
+  const [nd, 목록, 데모] = await Promise.all(
+    [읽기('nday.json'), 읽기('창목록.json'), 읽기('demo_2일.json')]);
   그림_nday(nd);          // 창과 무관하므로 한 번만 그림
+  그림_demo(데모);        // 돌려보기도 2일 창 하나뿐이라 한 번만
 
   const 창들 = (목록 && 목록['창']) || ['14일'];
   const 탭 = document.getElementById('window-tabs');

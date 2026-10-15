@@ -214,3 +214,19 @@ footer .right{color:rgba(255,255,255,.44); font-size:.74rem; margin-top:10px}
 .tag-gate{display:inline-block; background:var(--navy); color:#fff; font-size:.68rem;
   font-weight:700; padding:1px 7px; border-radius:999px; letter-spacing:.02em;
   vertical-align:.08em; margin-left:6px}
+
+/* ── 돌려보기 순위표 ──────────────────────────────────────────────── */
+.table-wrap{overflow-x:auto; margin:16px 0 10px; max-width:var(--read)}
+table.rank{border-collapse:collapse; width:100%; font-size:.84rem}
+table.rank th, table.rank td{padding:7px 10px; border-bottom:1px solid var(--line);
+  text-align:left; white-space:nowrap}
+table.rank th{font-size:.74rem; font-weight:700; color:var(--dim);
+  letter-spacing:.02em; border-bottom:1.5px solid var(--navy)}
+table.rank .r{text-align:right}
+table.rank td.g{white-space:normal; font-family:var(--mono); font-size:.78rem;
+  line-height:1.45; min-width:17em}
+table.rank tr.hit{background:rgba(12,46,92,.05)}
+table.rank tr.hit td{font-weight:700}
+table.rank td.num{font-family:var(--mono)}
+table.rank .mine{display:inline-block; background:var(--navy); color:#fff;
+  font-size:.66rem; font-weight:700; padding:1px 7px; border-radius:999px; margin-left:6px}

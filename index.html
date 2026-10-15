@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="web/style.css?v=f515c72f">
+<link rel="stylesheet" href="web/style.css?v=01088e19">
 </head>
 <body>
 
@@ -43,7 +43,7 @@
   <div class="sec-body">
   <p>
     리텐션이 떨어지면 분석가는 변수를 하나씩 쪼개 봅니다. 도시별로, 요금제별로, 연령대별로.
-    그런데 변수가 20개면 조합은 수백만 개입니다.
+    그런데 변수 23개를 둘씩 셋씩 겹치면 조합이 수백만 개가 됩니다.
   </p>
   <ul class="plain">
     <li><b>원래 낮은 것과 떨어진 것을 구분하지 못한다</b>
@@ -86,7 +86,7 @@
         <strong>이 연구가 쓰는 지표.</strong> “오늘 들은 사람이 내일도 듣는가”를 봅니다.
         점선은 <strong>기대 모델이 낸 예측</strong>이고, <strong>두 선 사이의 틈이 곧 편차</strong>입니다.
         학습 기간에는 둘이 붙어 있는데 평가 기간에는 실제가 꾸준히 위에 있습니다
-        (평균 <span class="num">+1.46%p</span>). 이 치우침을 빼 주는 것이 기준선 보정입니다.
+        (평균 <span class="num" data-meta="평가편차" data-fmt="부호">—</span>%p). 이 치우침을 빼 주는 것이 기준선 보정입니다.
       </figcaption>
     </figure>
   </div>
@@ -145,8 +145,75 @@
 </div></section>
 
 <!-- ─────────────────────────────────────────────────────────── -->
+<section id="try"><div class="inner">
+  <div class="sec-head">  <p class="kicker"><span class="chip">04</span><em>돌려보기</em></p>
+  <h2>실제로 나오는 순위표</h2>
+  <div class="bar"></div>
+  </div>
+  <div class="sec-body">
+  <p>
+    이 방법이 내놓는 산출물은 <strong>집단 순위표</strong> 하나입니다.
+    아래는 미리 돌려 둔 결과로, 같은 데이터·같은 탐색이고
+    <strong>심은 하락이 있느냐만</strong> 다릅니다.
+    <strong>얼마나 작은 하락까지 잡히는지</strong>는 다음 절에서 잽니다.
+    여기는 <strong>주 분석인 평가 2일 창</strong>에서 <strong>조건 두 개까지</strong> 찾은 결과입니다
+    (다음 절의 창 단추는 이 표에 영향을 주지 않습니다).
+  </p>
+
+  <div class="wintabs-wrap">
+    <span class="wintabs-label">두 상황을 번갈아 보세요</span>
+    <div id="demo-tabs" class="wintabs" role="tablist"></div>
+  </div>
+  <p class="note" id="demo-desc">—</p>
+
+  <div class="table-wrap">
+    <table class="rank"><thead><tr>
+      <th class="r">순위</th><th>집단</th><th class="r">유효 인원</th>
+      <th class="r">보정후 편차</th><th class="r">t</th>
+    </tr></thead><tbody id="demo-rows"></tbody></table>
+  </div>
+
+  <p class="note">
+    <strong>t</strong> 가 <code id="demo-line">—</code> 보다 아래인 줄은 진하게 칠했습니다 —
+    「우연이라고 보기 어렵다」는 뜻입니다.
+    <strong>보정후 편차</strong> 는 그 집단의 평균 편차에서 평소 추세를 뺀 값이고,
+    <strong>t</strong> 는 그것을 그 집단의 오차로 나눈 값입니다 —
+    <strong>둘 다 보정을 거친 값</strong>이고, 앞은 <em>얼마나 떨어졌나</em>,
+    뒤는 <em>우연일 수 있나</em>를 답합니다. 순위는 t 로 매깁니다.
+    <strong>유효 인원</strong> 은 같은 사람이 여러 날 겹치는 몫을 덜어낸 수입니다.
+  </p>
+  <p class="note">
+    두 가지가 눈에 띕니다. 하나는 심은 집단의 <strong>보정후가 −3.00%p</strong> 로,
+    심은 값과 소수점까지 같다는 것입니다 — 재방문을 3%p 만큼 0 으로 뒤집었으니
+    평균 편차도 정확히 그만큼 내려가야 맞습니다.
+    다른 하나는 <strong>심지 않은 집단들도 같이 내려간다</strong>는 것입니다.
+    2~5위는 심은 집단과 겹치는 유저를 품고 있어 덩달아 끌려 내려간 것이고,
+    그래서 <strong>1위만 보고 끝내면 안 됩니다</strong>.
+    2위를 보면 <strong>보정후 편차가 1위보다 큰데(−3.13 vs −3.00) 순위는 아래</strong>입니다 —
+    인원이 절반이라 오차가 커서 t 가 약합니다.
+    떨어진 폭이 아니라 <strong>우연으로 보기 어려운 정도</strong>로 줄을 세우기 때문입니다.
+  </p>
+  <p class="note">
+    ⚠️ 여기 판정선은 <strong>조건 두 개까지만</strong> 찾았을 때의 값입니다.
+    조건 세 개까지 열면 더 극단적인 조합이 나와 <strong>−3.64</strong> 로 내려갑니다
+    (다음 절에서 쓰는 값). <strong>얼마나 깊이 뒤지느냐에 따라 「우연의 크기」도 커집니다</strong> —
+    많이 뒤질수록 넘어야 할 선이 높아지는 셈입니다.
+  </p>
+
+  <div class="callout">
+    <h4>브라우저에서 바로 돌리지 않는 이유</h4>
+    <p>
+      한 번 돌리는 데 1,000만 행을 훑어야 하고, 조건 두 개를 겹친 조합만 해도 수만 가지입니다.
+      그 데이터를 브라우저로 보낼 수 없어 <strong>미리 돌린 결과</strong>를 담아 두었습니다.
+      실제 탐색은 한 번에 <strong>약 1분</strong> 걸립니다.
+    </p>
+  </div>
+  </div>
+</div></section>
+
+<!-- ─────────────────────────────────────────────────────────── -->
 <section id="result"><div class="inner">
-  <div class="sec-head">  <p class="kicker"><span class="chip">04</span><em>결과</em></p>
+  <div class="sec-head">  <p class="kicker"><span class="chip">05</span><em>결과</em></p>
   <h2>얼마나 작은 하락까지 잡히나</h2>
   <div class="bar"></div>
   </div>
@@ -169,7 +236,7 @@
   <div class="pull">
     <b><span class="n1" id="pull-a">—</span><span class="ar">→</span><span class="n2" id="pull-b">—</span><small>%p</small></b>
     <p><strong>찾아내는 것</strong>과 <strong>“우연이 아니다”라고 말하는 것</strong>은 다릅니다.
-       <code id="pull-small-name">—</code> 유효 인원 <span id="pull-small">—</span>명짜리 집단은
+       <code id="pull-small-name">—</code> 평가 <span id="pull-small">—</span>행짜리 집단은
        <strong id="pull-a2">—</strong>면 집어내지만, 유의하다고 보고하려면
        <strong id="pull-b2">—</strong>까지 떨어져야 합니다.
        <span id="pull-tail"></span></p>
@@ -178,30 +245,11 @@
   <p class="note">
     <strong>유효 인원</strong>은 사람 수를 센 것이 아닙니다. 분석 단위가 <em>유저 × 기준일</em>이라
     같은 사람이 여러 날 나오는데, 한 사람의 하루하루는 서로 비슷하게 움직여서
-    <strong>독립된 관측으로 칠 수 없습니다.</strong> 그 겹침을 덜어낸 수가 유효 인원입니다 —
-    아래 목록의 <em>평가 N행</em>보다 늘 작습니다.
+    <strong>독립된 관측으로 칠 수 없습니다.</strong> 그 겹침을 덜어낸 수가 유효 인원이고,
+    <em>평가 N행</em>보다 늘 작습니다. 아래 목록은 <em>평가 N행</em>으로 적고,
+    하한 곡선의 가로축만 유효 인원을 씁니다 — 하한이 표본 크기에 어떻게 달리는지는
+    겹침을 덜어낸 수로 봐야 맞기 때문입니다.
   </p>
-
-  <h3 class="subhead">조건 하나로 정의되는 집단</h3>
-  <p class="note">
-    <code id="ex1-name">—</code> 처럼 변수 하나로 잘리는 집단입니다.
-    <span id="ex1-runs">—</span>을 돌린 실측값입니다.
-  </p>
-
-  <div class="slider-box">
-    <p class="howto">아래 <strong>막대를 직접 끌면 그 집단만</strong> 움직입니다.
-      슬라이더는 <strong>전부 한꺼번에</strong>(따로 움직여 둔 것도 다시 맞춰짐).
-      따로 움직인 줄은 마커가 <strong>빨간색</strong>이 됩니다</p>
-    <label for="delta1">심은 하락 폭 <output id="delta-out1">5.0</output> <span class="note">%p</span></label>
-    <input type="range" id="delta1" min="0" max="20" step="0.5" value="5">
-    <div class="legend">
-      <span><i class="sw sw-none"></i>못 찾음</span>
-      <span><i class="sw sw-found"></i>찾았지만 “유의하다”고 말할 수 없음</span>
-      <span><i class="sw sw-report"></i>보고 가능</span>
-    </div>
-  </div>
-
-  <div id="groups1"></div>
 
   <h3 class="subhead">조건 두 개로 정의되는 집단</h3>
   <p class="note">
@@ -209,13 +257,14 @@
     탐색이 <strong>한 단계 더 들어가야</strong> 닿기 때문에 더 어려울 것으로 봤는데,
     실제로는 조건 하나짜리와 크게 다르지 않았습니다.
     <strong>희석</strong>은 자식이 부모에서 차지하는 몫으로, 작을수록 부모가 눈치채기 어렵습니다.
-    찾음 하한은 집단당 4판 이분 탐색, <strong>보고 하한은 계산값</strong>입니다
+    찾음 하한은 집단당 7판 이분 탐색으로 좁힌 값이고, <strong>보고 하한은 계산값</strong>입니다
     (실측과 상관 0.997로 검증).
   </p>
 
   <div class="slider-box">
-    <p class="howto">이쪽도 같습니다 — <strong>막대는 그 집단만</strong>, <strong>슬라이더는 전부</strong>.
-      막대 위에서 좌우 화살표 키도 되고, <kbd>Esc</kbd> 면 슬라이더 값으로 돌아갑니다</p>
+    <p class="howto"><strong>막대를 끌면 그 줄만</strong>, <strong>슬라이더를 움직이면 전부</strong>.
+      따로 끌어 둔 줄은 마커가 <strong>빨간색</strong>이 되고, 슬라이더를 건드리면 다시 맞춰집니다.
+      막대를 누른 뒤 <strong>좌우 화살표 키</strong>로도 움직이고, <kbd>Esc</kbd> 면 슬라이더 값으로 돌아갑니다</p>
     <label for="delta2">심은 하락 폭 <output id="delta-out2">5.0</output> <span class="note">%p</span></label>
     <input type="range" id="delta2" min="0" max="20" step="0.5" value="5">
     <div class="legend">
@@ -233,19 +282,15 @@
     조건이 셋이면 탐색이 <strong>두 단계</strong>를 거쳐야 하는데, 2단계로 뻗으려면
     <strong>부모(조건 두 개짜리)가 먼저 상위 20칸에 들어야</strong> 합니다.
     이 문턱을 <strong>도달</strong>이라 부릅니다. 조건 두 개짜리에서는
-    <strong>15개 중 0개</strong>가 여기 걸렸는데, 조건 세 개에서는 <strong>15개 중 6개</strong>입니다.
+    <strong id="gate2">—</strong>가 여기 걸렸는데, 조건 세 개에서는 <strong id="gate3">—</strong>입니다.
     막대에 <span class="tag-gate">도달이 문턱</span> 표시가 붙은 집단이 그것입니다.
     못 간다는 뜻이 아니라 <strong>그 값을 넘으면 비로소 열린다</strong>는 뜻입니다 —
-    자기 혼자 유의해지는 데 필요한 값보다 <strong>3~6배</strong>를 더 떨어뜨려야 목록에 뜹니다.
-    실제로 네 집단이 <strong>예측한 문턱 바로 위에서</strong> 켜졌습니다
-    (33.7→34.3, 25.2→26.6, 15.8→16.7, 9.0→10.3).
+    자기 혼자 유의해지는 데 필요한 값보다 <strong id="gate-x">—</strong>를 더 떨어뜨려야 목록에 뜹니다.
+    <span id="gate-ex"></span>
   </p>
-  <p class="note">
-    눈금이 <strong>40%p</strong>까지입니다. 앞의 두 묶음(20%p)보다 두 배 넓습니다.
-  </p>
-
   <div class="slider-box">
-    <p class="howto">여기도 같습니다 — <strong>막대는 그 집단만</strong>, <strong>슬라이더는 전부</strong></p>
+    <p class="howto">여기도 같습니다. 다만 눈금이 <strong>40%p</strong>까지로,
+      앞의 두 묶음(20%p)보다 두 배 넓습니다 — 조건이 셋이면 하한이 그만큼 커지기 때문입니다</p>
     <label for="delta3">심은 하락 폭 <output id="delta-out3">5.0</output> <span class="note">%p</span></label>
     <input type="range" id="delta3" min="0" max="40" step="0.5" value="5">
     <div class="legend">
@@ -292,7 +337,7 @@
 
 <!-- ─────────────────────────────────────────────────────────── -->
 <section id="limits"><div class="inner">
-  <div class="sec-head">  <p class="kicker"><span class="chip">05</span><em>한계</em></p>
+  <div class="sec-head">  <p class="kicker"><span class="chip">06</span><em>한계</em></p>
   <h2>이 방법이 못 하는 것</h2>
   <div class="bar"></div>
   </div>
@@ -315,10 +360,15 @@
     <dd>이 방법은 사건 기점의 급락용입니다. 날마다 조금씩 심해지는 하락은 평가 기간 평균이 절반으로
         희석되고, 더 근본적으로는 “정상 기간”을 어디로 잡아도 이미 하락이 섞여 기준선이 표류합니다.</dd>
 
-    <dt>작은 집단은 보정을 덜 받는다</dt>
+    <dt>작은 집단은 보정을 덜 받는다 — 다만 실무에서는 덜 아프다</dt>
     <dd>평가 행이 일정 수(2일 창 1,400개 · 14일 창 1만 개) 미만이면
         집단별 추세를 믿을 수 없어 전체 기준선을 씁니다.
-        안전하지만, 그 대가로 작은 집단의 진짜 하락을 놓칠 수 있습니다.</dd>
+        안전하지만, 그 대가로 작은 집단의 진짜 하락을 놓칠 수 있습니다.
+        <strong>그런데 진단이 필요한 상황에서는 이 손해가 작습니다</strong> —
+        전체의 <em>w</em> 를 차지하는 집단이 <em>δ</em> 만큼 떨어지면 전사 지표는
+        <em>w × δ</em> 만 움직이므로, <strong>전사 하락이 눈에 보일 정도면 그 집단의
+        <em>δ</em> 는 이미 충분히 커야 합니다.</strong> 작은 집단일수록 필요한
+        <em>δ</em> 가 가팔라져, 하한보다 한참 위에서 신호가 잡힙니다.</dd>
 
     <dt>순위는 “원인”이 아니라 “먼저 볼 곳”이다</dt>
     <dd>상위 가설은 A/B 테스트나 DID로 따로 검증해야 합니다. 관측 데이터로 인과를 말하지 않습니다.</dd>
@@ -328,7 +378,7 @@
 
 <!-- ─────────────────────────────────────────────────────────── -->
 <section id="repro"><div class="inner">
-  <div class="sec-head">  <p class="kicker"><span class="chip">06</span><em>재현</em></p>
+  <div class="sec-head">  <p class="kicker"><span class="chip">07</span><em>재현</em></p>
   <h2>코드와 데이터</h2>
   <div class="bar"></div>
   </div>
@@ -351,12 +401,12 @@
 </main>
 
 <footer><div class="inner">
-  <p>KKBox WSDM Cup 2018 · 2017년 3월 · 유저 110만 명 · 분석 행 1,721만</p>
+  <p>KKBox WSDM Cup 2018 · 2017년 3월 · 유저 110만 명 · 분석 행 <span data-meta="분석행" data-fmt="만">—</span></p>
   <p id="built">—</p>
   <p class="right">Lim Chaewon Portfolio</p>
 </div></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="web/app.js?v=123f2606"></script>
+<script src="web/app.js?v=f01826cb"></script>
 </body>
 </html>
