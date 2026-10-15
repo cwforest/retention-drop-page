@@ -48,7 +48,7 @@
   <ul class="plain">
     <li><b>원래 낮은 것과 떨어진 것을 구분하지 못한다</b>
       <span>신규 유저의 리텐션은 원래 낮습니다. 낮다는 게 하락의 단서는 아닙니다.</span></li>
-    <li><b>단순한 전후 비교 비교는 한계가 있습니다</b>
+    <li><b>단순한 전후 비교의 한계</b>
       <span>원래 리텐션이 낮은 집단이 이벤트로 대거 유입되는 경우가 있습니다.</span></li>
     <li><b>작은 집단이 우연히 튄 것을 거를 수 없다</b>
       <span>500명짜리 집단은 아무 일이 없어도 몇 %p씩 출렁입니다.</span></li>
@@ -233,9 +233,7 @@
 
   <h3 class="subhead">조건 세 개로 정의되는 집단</h3>
   <p class="note">
-    <code>city = city 4 AND payment_method_id = 1 AND age = 40+</code> 처럼 조건을 셋까지 겹친 집단입니다.<br>
-    여기서 처음으로 <strong>빔 서치가 못 닿는 집단</strong>이 나옵니다 — 2단계로 뻗으려면 <strong>부모가 먼저 상위 20칸에 들어야</strong> 하기 때문입니다
-    (조건 두 개 <strong id="gate2">—</strong>, 조건 세 개 <strong id="gate3">—</strong>).
+    <code>city = city 4 AND payment_method_id = 1 AND age = 40+</code> 처럼 조건을 셋까지 겹친 집단입니다.
   </p>
 
   <div id="find3-wrap" style="max-width:var(--read); margin:6px 0 32px">
@@ -351,11 +349,10 @@
     이 페이지가 쓰는 숫자는 전부 집계된 결과이고 <code>docs/web/data/</code>에 JSON으로 들어 있습니다.
   </p>
   <table class="files">
-    <tr><td><code>EDA.ipynb</code></td><td>탐색 분석 — 위 두 그래프가 여기서 나옵니다</td></tr>
+    <tr><td><code>EDA.ipynb</code></td><td>탐색 분석</td></tr>
     <tr><td><code>build_mart.ipynb</code></td><td>분석 테이블 만들기</td></tr>
     <tr><td><code>Modeling.ipynb</code></td><td>기대 모델과 기준선 보정</td></tr>
-    <tr><td><code>Search.ipynb</code></td><td>집단 탐색</td></tr>
-    <tr><td><code>Bench.ipynb</code></td><td>하락을 심어 탐지력을 재는 실험판</td></tr>
+    <tr><td><code>Bench.ipynb</code></td><td>집단 탐색과 주입 실험</td></tr>
   </table>
   </div>
 </div></section>
