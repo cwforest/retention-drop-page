@@ -72,7 +72,15 @@ h3{font-size:1rem; font-weight:700; margin:0 0 10px; letter-spacing:-.015em}
 .sec-body > p, .sec-body > ul, .sec-body > ol:not(.steps), .sec-body > dl,
 .sec-body > .callout, .sec-body > .formula, .sec-body > .pull,
 .sec-body > .slider-box, .sec-body > #groups1, .sec-body > #groups2,
+/* #groups3 와 하한 막대 묶음이 빠져 있어 혼자 폭이 넓었음 (10/15) */
+.sec-body > #groups3, .sec-body > #find2-wrap, .sec-body > #find3-wrap,
 .sec-body > table, .sec-body > .subhead{max-width:var(--read)}
+/* 링크 — 기본 파랑이 감청 테마와 안 맞아 색과 밑줄을 다시 잡음 */
+a{color:var(--navy); text-decoration:underline; text-underline-offset:3px;
+  text-decoration-thickness:1px; text-decoration-color:var(--sky-2)}
+a:hover{text-decoration-color:var(--navy)}
+a:focus-visible{outline:2px solid var(--sky); outline-offset:2px}
+
 p{margin:0 0 16px; text-wrap:pretty}
 em{font-style:normal; font-weight:700; color:var(--navy-2)}
 code{font-family:var(--mono); font-size:.88em; background:var(--card);

@@ -165,6 +165,128 @@ function 그림_d1(d) {
 // ── δ 슬라이더 ───────────────────────────────────────────────────────
 // 조건 1개 묶음과 조건 2개 묶음을 각각 그림. 둘은 슬라이더도 따로 씀.
 const MAXδ = 20;      // 기본 눈금. 묶음마다 다를 수 있어 상자에 적어 두고 꺼내 씀
+// ── 하한 막대 (조건 2개·3개) ─ fix_page_find_charts.py 가 넣음 ─
+// 단추로 고른 값. 창을 바꿔도 유지되도록 바깥에 둠
+const 하한칸 = { '조건 2개': '찾음δ', '조건 3개': '찾음δ' };
+let 마지막gr = null;
+
+function 단추묶기() {
+  document.querySelectorAll('.wintabs[data-find]').forEach(묶음 => {
+    const 종류 = '조건 ' + 묶음.dataset.find + '개';
+    묶음.querySelectorAll('button').forEach(b => {
+      b.addEventListener('click', () => {
+        하한칸[종류] = b.dataset.kind;
+        묶음.querySelectorAll('button').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        그림_찾음(마지막gr, 종류,
+          'chart-find' + 묶음.dataset.find, 'find' + 묶음.dataset.find + '-wrap');
+      });
+    });
+  });
+}
+
+// 세 조건을 다 적으면 80자라 칸에 안 들어가고, 글자 수로 자르면 첫 조건이
+// 중간에서 끊겨 읽히지 않음 ('days_since_last ≤0 AN…').
+// 그래서 첫 조건만 남기고 나머지는 「+2」로 셈 — 전체 이름은 마우스를 올리면 뜸
+function 이름줄임(s, 최대) {
+  const 쪽 = String(s).split(' AND ');
+  const 첫 = 쪽[0].trim().replace(/\d+\.\d{3,}/g, (m) => (+m).toFixed(2));
+  const 짧 = 첫.length <= 최대 ? 첫 : 첫.slice(0, 최대 - 1) + '…';
+  return 쪽.length > 1 ? 짧 + '  +' + (쪽.length - 1) : 짧;
+}
+
+function 그림_찾음(gr, 종류, 캔버스id, 상자id) {
+  const el = 캔버스(캔버스id);
+  if (!el) return;
+  const 칸 = 하한칸[종류] || '찾음δ';
+  const 칸이름 = 칸 === '찾음δ' ? '찾음 하한' : '보고 하한';
+  const 전부 = (gr || []).filter(g => g['종류'] === 종류);
+  const 목록 = 전부.filter(g => g[칸] != null).sort((a, b) => a[칸] - b[칸]);
+  const 상자 = document.getElementById(상자id);
+  if (!목록.length) { if (상자) 상자.classList.add('hidden'); return; }
+  if (상자) 상자.classList.remove('hidden');
+
+  const v = 목록.map(g => g[칸]);
+  const 정렬 = [...v].sort((a, b) => a - b);
+  const 중앙 = 정렬.length % 2
+    ? 정렬[(정렬.length - 1) / 2]
+    : (정렬[정렬.length / 2 - 1] + 정렬[정렬.length / 2]) / 2;
+  const 꼬리 = 상자id.replace('-wrap', '');
+  const 적기 = (끝, t) => {
+    const e = document.getElementById(꼬리 + '-' + 끝); if (e) e.textContent = t;
+  };
+  // 찾음δ 는 끝까지 못 찾은 집단이 빠지므로 그 수를 드러냄 (14일 조건 3개는 13개 중 11개)
+  적기('n', 목록.length === 전부.length
+    ? String(전부.length) : 전부.length + '개 중 ' + 목록.length);
+  적기('mid', 중앙.toFixed(2));
+  적기('ratio', (정렬[정렬.length - 1] / 정렬[0]).toFixed(0));
+  적기('metric', 칸이름);
+
+  // 막대 끝에 값, 그리고 중앙값 점선. Chart.js 기본에는 없어 직접 그림
+  const 꾸밈 = {
+    id: '하한꾸밈',
+    afterDatasetsDraw(chart) {
+      const { ctx, chartArea: a, scales: { x } } = chart;
+      ctx.save();
+      ctx.font = '700 11px ' + Chart.defaults.font.family;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = css('--navy');
+      chart.getDatasetMeta(0).data.forEach((막대, i) => {
+        ctx.fillText(v[i].toFixed(2), 막대.x + 7, 막대.y);
+      });
+      const px = x.getPixelForValue(중앙);
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = css('--dim');
+      ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = css('--dim');
+      ctx.fillText('중앙 ' + 중앙.toFixed(2) + '%p', px + 7, a.top + 7);
+      ctx.restore();
+    }
+  };
+
+  기억(캔버스id, new Chart(el, {
+    type: 'bar',
+    plugins: [꾸밈],
+    data: {
+      labels: 목록.map(g => 이름줄임(g['이름'], 종류 === '조건 2개' ? 24 : 19)),
+      datasets: [{
+        data: v, backgroundColor: css('--accent'), borderWidth: 0,
+        barPercentage: 0.72, categoryPercentage: 0.86
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 36, top: 6 } },   // 막대 끝 값이 잘리지 않게
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            // 잘린 이름 때문에 어느 집단인지 헷갈리므로 전체 이름을 띄움
+            title: (it) => 목록[it[0].dataIndex]['이름'],
+            label: (it) => 칸이름 + ' ' + it.parsed.x.toFixed(2) + '%p'
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'logarithmic',
+          title: { display: true, text: 칸이름 + ' (%p) — 작을수록 작은 하락까지 잡아냄' },
+          // 14일 창은 38.61%p 까지 올라가므로 40 눈금도 있어야 함
+          // 로그 축은 기본으로 눈금 글자가 세로로 서 버려서 각도를 0 으로 고정함
+          ticks: { maxRotation: 0, minRotation: 0, autoSkip: false,
+                   callback: (v) => ([0.5, 1, 2, 5, 10, 20, 40].includes(v) ? String(v) : '') }
+        },
+        y: { ticks: { autoSkip: false, font: { size: 10.5 } }, grid: { display: false },
+             border: { display: false } }
+      }
+    }
+  }));
+}
+// ── 하한 막대 끝 ────────────────────────────────────────────
+
 // 조건 3개는 찾음 하한이 34%p 까지 올라가 20 으로는 막대가 잘림.
 // 묶음 상자(.grow)의 data-max 에 적어 두고, 줄·끌기·키보드가 모두 거기서 읽음
 const 칸최대 = (el) => {
@@ -552,11 +674,17 @@ async function 창그리기(창) {
     묶음붙이기('groups2', 'delta2', 'delta-out2', gr.filter(g => g['종류'] === '조건 2개'));
     묶음붙이기('groups3', 'delta3', 'delta-out3', gr.filter(g => g['종류'] === '조건 3개'));
   }
+  마지막gr = gr;
+  if (gr && gr.length) {
+    그림_찾음(gr, '조건 2개', 'chart-find2', 'find2-wrap');
+    그림_찾음(gr, '조건 3개', 'chart-find3', 'find3-wrap');
+  }
   그림_curve(cv);
 }
 
 (async function () {
   기본옵션();
+  단추묶기();
   const [nd, 목록, 데모] = await Promise.all(
     [읽기('nday.json'), 읽기('창목록.json'), 읽기('demo_2일.json')]);
   그림_nday(nd);          // 창과 무관하므로 한 번만 그림
